@@ -69,20 +69,20 @@ public class LoginWindow {
 
 
     public void login() {
-        Integer id = Integer.valueOf(usernameField.getText());
+        String userName = usernameField.getText();
         String password = passwordField.getText();
-        String ans = sendLoginRequest(id, password);
+        String ans = sendLoginRequest(userName, password);
         LOG.info(String.format("Response %s", ans));
         if (ans.equals("true")) {
-            alarmField.setText("The ID and Password are good!");
+            javax.swing.SwingUtilities.invokeLater(new AccountWindow(userName));
         } else {
-            alarmField.setText("The ID and Password do not match!");
+            alarmField.setText("The UserName and Password do not match!");
         }
     }
 
-    private static String sendLoginRequest(Integer id, String password) {
+    private static String sendLoginRequest(String userName, String password) {
         try {
-            URL url = new URL(String.format("http://localhost:8080/login?id=%s&password=%s", id, password));
+            URL url = new URL(String.format("http://localhost:8080/login?userName=%s&password=%s", userName, password));
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
 

@@ -16,7 +16,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class RegisterWindow {
+public class AccountWindow {
     private static final Logger LOG = LoggerFactory.getLogger(LoginWindow.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private final SingletonWindow singletonWindow;
@@ -28,7 +28,7 @@ public class RegisterWindow {
     private final JButton submitButton;
     private final JTextField alarmField;
 
-    public RegisterWindow() {
+    public AccountWindow(String userName) {
         singletonWindow = SingletonWindow.getInstance();
         singletonWindow.getContentPane().removeAll();
         singletonWindow.repaint();
@@ -116,45 +116,9 @@ public class RegisterWindow {
 
         LOG.info(String.format("Response %s", response));
         if (statusCode == 200) {
-            javax.swing.SwingUtilities.invokeLater(LoginWindow::new);
+            javax.swing.SwingUtilities.invokeLater(AccountWindow::new);
         } else {
             alarmField.setText("Failed!" + response);
         }
     }
-
-//    private static String[] sendSubmitRequest(String firstName, String lastName,String password,String email) {
-//        try {
-//            Customer customer = new Customer();
-//            customer.setPassword(password);
-//            customer.setEmail(email);
-//            customer.setLastName(lastName);
-//            customer.setFirstName(firstName);
-//
-//            URL url = new URL("http://localhost:8080/addCustomer");
-//            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-//            con.setRequestMethod("POST");
-//            con.setRequestProperty("Content-Type", "application/json");
-//            con.setDoOutput(true);
-//
-//            String payload = objectMapper.writeValueAsString(customer);
-//            OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-//            out.write(payload);
-//            out.close();
-//
-//            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-//            String inputLine;
-//            StringBuilder response = new StringBuilder();
-//            while ((inputLine = in.readLine()) != null) {
-//                response.append(inputLine);
-//            }
-//            in.close();
-//            int statusCode = con.getResponseCode();
-//
-//            return new String[]{String.valueOf(statusCode), response.toString()};
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return new String[]{"000", e.getMessage()};
-//        }
-//    }
 }
-
