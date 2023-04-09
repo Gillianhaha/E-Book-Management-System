@@ -1,14 +1,13 @@
 package com.group.eBookManagementSystem.service;
 
-import com.group.eBookManagementSystem.repository.CustomerRepository;
 import com.group.eBookManagementSystem.model.Customer;
+import com.group.eBookManagementSystem.repository.CustomerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class CustomerService {
@@ -16,55 +15,56 @@ public class CustomerService {
     @Autowired
     private CustomerRepository customerRepository;
 
-    public void addCustomer(String firstName, String lastName, String password, String email, String role) {
-        Customer customer = new Customer();
-        customer.setFirstName(firstName);
-        customer.setLastName(lastName);
-        customer.setPassword(password);
-        customer.setEmail(email);
-        customer.setMyLibrary(List.of(1,2,3));
-        if(Objects.equals(role, "Admin")) {
-            customer.setRole(Customer.Role.ADMIN);
+    public void addCustomer(Customer customer) throws Exception {
+        if (!checkExist(customer.getUserName())) {
+            List<Customer> customerList = (List<Customer>) getCustomers();
+            if (customerList.size() == 0) {
+                customer.setRole(Customer.Role.ADMIN);
+            } else {
+                customer.setRole(Customer.Role.USER);
+            }
+            customerRepository.save(customer);
+        } else {
+            throw new Exception("UserName Occupied.");
         }
-        else {
-            customer.setRole(Customer.Role.USER);
-        }
-        customerRepository.save(customer);
     }
 
     public Iterable<Customer> getCustomers() {
         return customerRepository.findAll();
     }
 
-    public Customer findCustomerById(Integer id) {
-        return customerRepository.findCustomerById(id);
+    public Customer findCustomerByUserName(String userName) {
+        return customerRepository.findCustomerByUserName(userName);
     }
 
-    public void updateCustomer(Integer id, String firstName,String lastName,String email) {
-        Customer customer = customerRepository.findCustomerById(id);
+    public void updateCustomer(String userName, String firstName, String lastName, String email) {
+        Customer customer = customerRepository.findCustomerByUserName(userName);
         customer.setFirstName(firstName);
         customer.setLastName(lastName);
         customer.setEmail(email);
 
         customerRepository.save(customer);
     }
-    public void updateCustomer(Integer id, Customer customer){
+
+    public void updateCustomer(String userName, Customer customer) {
         customerRepository.save(customer);
     }
 
-    public void deleteCustomer(Integer id){
-        customerRepository.deleteCustomerById(id);
+    public void deleteCustomer(String userName) {
+        customerRepository.deleteCustomerByUserName(userName);
     }
-    public void addBook(Integer customerID,Integer bookID){
-        Customer customer = findCustomerById(customerID);
+
+    public void addBook(String userName, Integer bookID) {
+        Customer customer = findCustomerByUserName(userName);
         List<Integer> library = customer.getMyLibrary();
         library.add(bookID);
         customer.setMyLibrary(library);
 
         customerRepository.save(customer);
     }
-    public void deleteBook(Integer customerID,Integer bookID){
-        Customer customer = findCustomerById(customerID);
+
+    public void deleteBook(String userName, Integer bookID) {
+        Customer customer = findCustomerByUserName(userName);
         List<Integer> library = customer.getMyLibrary();
         library.remove(bookID);
         customer.setMyLibrary(library);
@@ -72,9 +72,13 @@ public class CustomerService {
         customerRepository.save(customer);
     }
 
-    public boolean verifyUser(Integer id, String password){
-        boolean res = password.equals(customerRepository.findCustomerById(id).getPassword());
-        LOG.info(String.format("Result of verify user %b",res));
+    public boolean verifyUser(String userName, String password) {
+        boolean res = password.equals(customerRepository.findCustomerByUserName(userName).getPassword());
+        LOG.info(String.format("Result of verify user %b", res));
         return res;
+    }
+
+    public boolean checkExist(String userName) {
+        return customerRepository.existsById(userName);
     }
 }

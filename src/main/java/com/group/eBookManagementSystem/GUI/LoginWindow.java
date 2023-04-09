@@ -1,6 +1,5 @@
 package com.group.eBookManagementSystem.GUI;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.group.eBookManagementSystem.service.CustomerService;
+
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,25 +11,42 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 @Getter
-public class LoginWindow extends JFrame implements ActionListener {
+public class LoginWindow {
     private static final Logger LOG = LoggerFactory.getLogger(LoginWindow.class);
-    private JTextField usernameField;
-    private JPasswordField passwordField;
-    private JButton loginButton;
-    private JTextField alarmField;
+    private final SingletonWindow singletonWindow;
+    private final JTextField usernameField;
+    private final JPasswordField passwordField;
+    private final JButton loginButton;
+    private final JTextField alarmField;
+    private final JButton registerButton;
+
     public LoginWindow() {
+        singletonWindow = SingletonWindow.getInstance();
         JPanel panel = new JPanel();
         JLabel usernameLabel = new JLabel("Username:");
         usernameField = new JTextField(20);
         JLabel passwordLabel = new JLabel("Password:");
         passwordField = new JPasswordField(20);
-        loginButton = new JButton("Login");
-        loginButton.addActionListener(this);
+        loginButton = new JButton("Log in");
+        loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                login();
+            }
+        });
+
+        registerButton = new JButton("Sign up");
+        registerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                register();
+            }
+        });
+
         alarmField = new JTextField(20);
         alarmField.setBackground(null);
         alarmField.setBorder(null);
@@ -41,39 +57,34 @@ public class LoginWindow extends JFrame implements ActionListener {
         panel.add(passwordLabel);
         panel.add(passwordField);
         panel.add(loginButton);
+        panel.add(registerButton);
         panel.add(alarmField);
 
-        add(panel);
-        setSize(300, 250);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setVisible(true);
+        singletonWindow.getContentPane().add(panel, BorderLayout.CENTER);
+        singletonWindow.setSize(300, 300);
+        singletonWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        singletonWindow.setLocationRelativeTo(null);
+        singletonWindow.setVisible(true);
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
+
+    public void login() {
         Integer id = Integer.valueOf(usernameField.getText());
         String password = passwordField.getText();
-        String ans = sendRequest(id,password);
-        LOG.info(String.format("Response %s",ans));
-        if(ans.equals("true") ) {
+        String ans = sendLoginRequest(id, password);
+        LOG.info(String.format("Response %s", ans));
+        if (ans.equals("true")) {
             alarmField.setText("The ID and Password are good!");
-        }
-        else {
+        } else {
             alarmField.setText("The ID and Password do not match!");
         }
     }
 
-    private static String sendRequest(Integer id, String password) {
+    private static String sendLoginRequest(Integer id, String password) {
         try {
-            URL url = new URL(String.format("http://localhost:8080/login?id=%s&password=%s",id,password));
+            URL url = new URL(String.format("http://localhost:8080/login?id=%s&password=%s", id, password));
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
-
-
-//            OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-//            out.write(payload);
-//            out.close();
 
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String inputLine;
@@ -88,6 +99,10 @@ public class LoginWindow extends JFrame implements ActionListener {
             e.printStackTrace();
             return "Error: " + e.getMessage();
         }
+    }
+
+    public void register() {
+        javax.swing.SwingUtilities.invokeLater(RegisterWindow::new);
     }
 
     public static void main(String[] args) {

@@ -9,7 +9,7 @@ public class EBookManagementApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(EBookManagementApplication.class, args);
-        javax.swing.SwingUtilities.invokeLater(LoginWindow::new);
+//        javax.swing.SwingUtilities.invokeLater(LoginWindow::new);
 //        System.setProperty("java.awt.headless", "false");
 //        SwingUtilities.invokeLater(() -> {
 //            try {

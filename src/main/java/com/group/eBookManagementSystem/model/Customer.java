@@ -11,10 +11,10 @@ import java.util.List;
 @Getter
 public class Customer {
 
+    //    @GeneratedValue(strategy = GenerationType.AUTO)
+//    private String id;
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
-
+    private String userName;
     private String firstName;
     private String lastName;
     private String password;
@@ -26,7 +26,7 @@ public class Customer {
 
     public enum Role {
         ADMIN,
-        USER;
+        USER
     }
 
 }

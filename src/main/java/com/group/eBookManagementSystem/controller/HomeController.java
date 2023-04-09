@@ -1,13 +1,12 @@
 package com.group.eBookManagementSystem.controller;
 
-import com.group.eBookManagementSystem.service.CustomerService;
-import com.group.eBookManagementSystem.model.Customer;
 import com.group.eBookManagementSystem.model.Book;
+import com.group.eBookManagementSystem.model.Customer;
 import com.group.eBookManagementSystem.service.BookService;
+import com.group.eBookManagementSystem.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.stereotype.Controller;
 
 @RestController
 public class HomeController {
@@ -16,8 +15,8 @@ public class HomeController {
     private CustomerService customerService;
 
     @PostMapping("/addCustomer")
-    public String addCustomer(@RequestParam String firstName, @RequestParam String lastName,@RequestParam String password,@RequestParam String email,@RequestParam String role) {
-        customerService.addCustomer(firstName,lastName,password,email,role);
+    public String addCustomer(@RequestBody Customer customer) throws Exception {
+        customerService.addCustomer(customer);
         return "Add new customer successfully!";
     }
 
@@ -26,26 +25,27 @@ public class HomeController {
         return customerService.getCustomers();
     }
 
-    @GetMapping("/findCustomerByID/{id}")
-    public Customer findCustomerById(@PathVariable Integer id) {
-        return customerService.findCustomerById(id);
+    @GetMapping("/findCustomerByUserName/{userName}")
+    public Customer findCustomerByUserName(@PathVariable String userName) {
+        return customerService.findCustomerByUserName(userName);
     }
 
-//    @PostMapping("/updateCustomerByID/{id}")
+    //    @PostMapping("/updateCustomerByID/{id}")
 //    public String updateCustomer(@PathVariable Integer id, @RequestParam String firstName, @RequestParam String lastName,@RequestParam String passwaord,@RequestParam String email) {
 //        customerService.updateCustomer(id, firstName, lastName, email);
 //
 //        return "Updated customer given ID: " + id.toString();
 //    }
-    @PostMapping("/updateCustomerByID/{id}")
-    public String updateCustomer(@PathVariable Integer id, @RequestBody Customer customer) {
-        customerService.updateCustomer(id, customer);
+    @PostMapping("/updateCustomerByUserName/{userName}")
+    public String updateCustomer(@PathVariable String userName, @RequestBody Customer customer) {
+        customerService.updateCustomer(userName, customer);
 
-        return "Updated customer given ID: " + id.toString();
+        return "Updated customer given ID: " + userName;
     }
+
     @PostMapping("/deleteCustomer")
-    public String deleteCustomer(@RequestParam Integer id) {
-        customerService.deleteCustomer(id);
+    public String deleteCustomer(@RequestParam String userName) {
+        customerService.deleteCustomer(userName);
         return "Delete the customer successfully!";
     }
 
@@ -53,8 +53,8 @@ public class HomeController {
     private BookService bookService;
 
     @PostMapping("/addBook")
-    public String addBook(@RequestParam String bookName, @RequestParam String author,@RequestParam String subject,@RequestParam String content) {
-        bookService.addBook(bookName,author,subject,content);
+    public String addBook(@RequestParam String bookName, @RequestParam String author, @RequestParam String subject, @RequestParam String content) {
+        bookService.addBook(bookName, author, subject, content);
         return "Add new book successfully!";
     }
 
@@ -69,33 +69,37 @@ public class HomeController {
     }
 
     @PostMapping("/updateBookByID/{id}")
-    public String updateBook(@PathVariable Integer id, @RequestParam String bookName, @RequestParam String author,@RequestParam String subject,@RequestParam String content) {
+    public String updateBook(@PathVariable Integer id, @RequestParam String bookName, @RequestParam String author, @RequestParam String subject, @RequestParam String content) {
         bookService.updateBook(id, bookName, author, subject, content);
 
         return "Updated book given ID: " + id.toString();
     }
+
     @PostMapping("/deleteBook")
     public String deleteBook(@RequestParam Integer id) {
         bookService.deleteBook(id);
         return "Delete the book successfully!";
     }
+
     @PostMapping("/rateBook/{id}")
     public String rateBook(@PathVariable Integer id, @RequestParam Integer rate) {
         bookService.rateBook(id, rate);
 
         return "Rated book given ID: " + id.toString();
     }
-    @PostMapping("/addBookToCustomer/{customerID}")
-    public String addBookToCustomer(@PathVariable Integer customerID, @RequestParam Integer bookID) {
-        customerService.addBook(customerID, bookID);
 
-        return "Add book with ID: " + bookID.toString() + " to Customer with ID: " + customerID.toString();
+    @PostMapping("/addBookToCustomer/{userName}")
+    public String addBookToCustomer(@PathVariable String userName, @RequestParam Integer bookID) {
+        customerService.addBook(userName, bookID);
+
+        return "Add book with ID: " + bookID.toString() + " to Customer with ID: " + userName;
     }
-    @PostMapping("/deleteBookToCustomer/{customerID}")
-    public String deleteBookToCustomer(@PathVariable Integer customerID, @RequestParam Integer bookID) {
-        customerService.deleteBook(customerID, bookID);
 
-        return "Delete book with ID: " + bookID.toString() + " to Customer with ID: " + customerID.toString();
+    @PostMapping("/deleteBookToCustomer/{userName}")
+    public String deleteBookToCustomer(@PathVariable String userName, @RequestParam Integer bookID) {
+        customerService.deleteBook(userName, bookID);
+
+        return "Delete book with ID: " + bookID.toString() + " to Customer with ID: " + userName;
     }
 
     @GetMapping("/")
@@ -111,11 +115,11 @@ public class HomeController {
 
     @PostMapping("/hello")
     public String hello(@RequestBody Customer customer) {
-        return customerService.findCustomerById(customer.getId()).getLastName();
+        return customerService.findCustomerByUserName(customer.getUserName()).getLastName();
     }
 
     @GetMapping("/login")
-    public String login(@RequestParam Integer id, @RequestParam String password) {
-        return Boolean.toString(customerService.verifyUser(id,password));
+    public String login(@RequestParam String userName, @RequestParam String password) {
+        return Boolean.toString(customerService.verifyUser(userName, password));
     }
 }

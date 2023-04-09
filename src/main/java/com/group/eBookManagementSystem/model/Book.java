@@ -1,10 +1,11 @@
 package com.group.eBookManagementSystem.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 @Entity
 @Setter
@@ -22,6 +23,7 @@ public class Book {
     private Integer sum = 0;
     private Integer count = 0;
     private Integer rate = 0;
+
     public void addRate(Integer number) {
         this.sum += number;
         this.count += 1;
@@ -29,5 +31,3 @@ public class Book {
     }
 
 }
-//    @ElementCollection
-//    private int[] rate={0};

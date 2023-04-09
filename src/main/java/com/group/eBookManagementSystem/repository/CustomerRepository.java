@@ -5,10 +5,12 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface CustomerRepository extends CrudRepository<Customer, Long> {
+public interface CustomerRepository extends CrudRepository<Customer, String> {
 
-    Customer findCustomerById(Integer id);
-    Customer deleteCustomerById(Integer id);
+    Customer findCustomerByUserName(String userName);
+
+    Customer deleteCustomerByUserName(String userName);
+
 //    Customer findCustomerByFirstName(String firstName);
 
 }
