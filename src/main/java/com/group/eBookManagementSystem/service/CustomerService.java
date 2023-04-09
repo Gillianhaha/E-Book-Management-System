@@ -2,6 +2,8 @@ package com.group.eBookManagementSystem.service;
 
 import com.group.eBookManagementSystem.repository.CustomerRepository;
 import com.group.eBookManagementSystem.model.Customer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +12,7 @@ import java.util.Objects;
 
 @Service
 public class CustomerService {
+    private static final Logger LOG = LoggerFactory.getLogger(CustomerService.class);
     @Autowired
     private CustomerRepository customerRepository;
 
@@ -67,5 +70,11 @@ public class CustomerService {
         customer.setMyLibrary(library);
 
         customerRepository.save(customer);
+    }
+
+    public boolean verifyUser(Integer id, String password){
+        boolean res = password.equals(customerRepository.findCustomerById(id).getPassword());
+        LOG.info(String.format("Result of verify user %b",res));
+        return res;
     }
 }

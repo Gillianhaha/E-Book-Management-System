@@ -108,4 +108,14 @@ public class HomeController {
         model.addAttribute("name", name);
         return "greeting";
     }
+
+    @PostMapping("/hello")
+    public String hello(@RequestBody Customer customer) {
+        return customerService.findCustomerById(customer.getId()).getLastName();
+    }
+
+    @GetMapping("/login")
+    public String login(@RequestParam Integer id, @RequestParam String password) {
+        return Boolean.toString(customerService.verifyUser(id,password));
+    }
 }
