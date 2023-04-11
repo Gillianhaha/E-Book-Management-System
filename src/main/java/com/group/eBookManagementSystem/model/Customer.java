@@ -1,6 +1,10 @@
 package com.group.eBookManagementSystem.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,8 +15,6 @@ import java.util.List;
 @Getter
 public class Customer {
 
-    //    @GeneratedValue(strategy = GenerationType.AUTO)
-//    private String id;
     @Id
     private String userName;
     private String firstName;

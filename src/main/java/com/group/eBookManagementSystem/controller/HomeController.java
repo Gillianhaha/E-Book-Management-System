@@ -5,8 +5,12 @@ import com.group.eBookManagementSystem.model.Customer;
 import com.group.eBookManagementSystem.service.BookService;
 import com.group.eBookManagementSystem.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class HomeController {
@@ -40,7 +44,7 @@ public class HomeController {
     public String updateCustomer(@PathVariable String userName, @RequestBody Customer customer) {
         customerService.updateCustomer(userName, customer);
 
-        return "Updated customer given ID: " + userName;
+        return "Updated customer with given UserName: " + userName;
     }
 
     @PostMapping("/deleteCustomer")
@@ -53,8 +57,8 @@ public class HomeController {
     private BookService bookService;
 
     @PostMapping("/addBook")
-    public String addBook(@RequestParam String bookName, @RequestParam String author, @RequestParam String subject, @RequestParam String content) {
-        bookService.addBook(bookName, author, subject, content);
+    public String addBook(@RequestBody Book book) {
+        bookService.addBook(book);
         return "Add new book successfully!";
     }
 
@@ -68,11 +72,17 @@ public class HomeController {
         return bookService.findBookById(id);
     }
 
+    //    @PostMapping("/updateBookByID/{id}")
+//    public String updateBook(@PathVariable Integer id, @RequestParam String bookName, @RequestParam String author, @RequestParam String subject, @RequestParam String content) {
+//        bookService.updateBook(id, bookName, author, subject, content);
+//
+//        return "Updated book with given ID: " + id.toString();
+//    }
     @PostMapping("/updateBookByID/{id}")
-    public String updateBook(@PathVariable Integer id, @RequestParam String bookName, @RequestParam String author, @RequestParam String subject, @RequestParam String content) {
-        bookService.updateBook(id, bookName, author, subject, content);
+    public String updateCustomer(@PathVariable Integer id, @RequestBody Book book) {
+        bookService.updateBook(id, book);
 
-        return "Updated book given ID: " + id.toString();
+        return "Updated book given with BookID: " + id;
     }
 
     @PostMapping("/deleteBook")
@@ -90,36 +100,25 @@ public class HomeController {
 
     @PostMapping("/addBookToCustomer/{userName}")
     public String addBookToCustomer(@PathVariable String userName, @RequestParam Integer bookID) {
-        customerService.addBook(userName, bookID);
+        customerService.addBookToCustomer(userName, bookID);
 
         return "Add book with ID: " + bookID.toString() + " to Customer with ID: " + userName;
     }
 
-    @PostMapping("/deleteBookToCustomer/{userName}")
+    @PostMapping("/deleteBookFromCustomer/{userName}")
     public String deleteBookToCustomer(@PathVariable String userName, @RequestParam Integer bookID) {
-        customerService.deleteBook(userName, bookID);
+        customerService.deleteBookFromCustomer(userName, bookID);
 
         return "Delete book with ID: " + bookID.toString() + " to Customer with ID: " + userName;
-    }
-
-    @GetMapping("/")
-    public String home() {
-        return "home";
-    }
-
-    @PostMapping("/greeting")
-    public String greeting(@RequestParam("name") String name, Model model) {
-        model.addAttribute("name", name);
-        return "greeting";
-    }
-
-    @PostMapping("/hello")
-    public String hello(@RequestBody Customer customer) {
-        return customerService.findCustomerByUserName(customer.getUserName()).getLastName();
     }
 
     @GetMapping("/login")
     public String login(@RequestParam String userName, @RequestParam String password) {
         return Boolean.toString(customerService.verifyUser(userName, password));
+    }
+
+    @GetMapping("/getAdminName")
+    public String getAdminName() {
+        return customerService.getAdminName();
     }
 }

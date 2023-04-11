@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -37,24 +38,26 @@ public class CustomerService {
         return customerRepository.findCustomerByUserName(userName);
     }
 
-    public void updateCustomer(String userName, String firstName, String lastName, String email) {
-        Customer customer = customerRepository.findCustomerByUserName(userName);
-        customer.setFirstName(firstName);
-        customer.setLastName(lastName);
-        customer.setEmail(email);
-
-        customerRepository.save(customer);
-    }
+//    public void updateCustomer(String userName, String firstName, String lastName, String email) {
+//        Customer customer = customerRepository.findCustomerByUserName(userName);
+//        customer.setFirstName(firstName);
+//        customer.setLastName(lastName);
+//        customer.setEmail(email);
+//
+//        customerRepository.save(customer);
+//    }
 
     public void updateCustomer(String userName, Customer customer) {
         customerRepository.save(customer);
     }
 
+    @Transactional
     public void deleteCustomer(String userName) {
+        LOG.info("userName:", userName);
         customerRepository.deleteCustomerByUserName(userName);
     }
 
-    public void addBook(String userName, Integer bookID) {
+    public void addBookToCustomer(String userName, Integer bookID) {
         Customer customer = findCustomerByUserName(userName);
         List<Integer> library = customer.getMyLibrary();
         library.add(bookID);
@@ -63,7 +66,7 @@ public class CustomerService {
         customerRepository.save(customer);
     }
 
-    public void deleteBook(String userName, Integer bookID) {
+    public void deleteBookFromCustomer(String userName, Integer bookID) {
         Customer customer = findCustomerByUserName(userName);
         List<Integer> library = customer.getMyLibrary();
         library.remove(bookID);
@@ -80,5 +83,25 @@ public class CustomerService {
 
     public boolean checkExist(String userName) {
         return customerRepository.existsById(userName);
+    }
+
+    public String getAdminName() {
+        List<Customer> customerList = (List<Customer>) getCustomers();
+        for (Customer customer : customerList) {
+            if (customer.getRole().equals(Customer.Role.ADMIN)) {
+                return customer.getUserName();
+            }
+        }
+        return "";
+    }
+
+    public void removeBookForAllCustomers(Integer bookID) {
+        List<Customer> customerList = (List<Customer>) getCustomers();
+        for (Customer customer : customerList) {
+            List<Integer> myLibrary = customer.getMyLibrary();
+            myLibrary.remove(bookID);
+            customer.setMyLibrary(myLibrary);
+            customerRepository.save(customer);
+        }
     }
 }

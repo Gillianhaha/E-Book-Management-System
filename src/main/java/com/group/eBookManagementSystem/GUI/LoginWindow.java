@@ -1,11 +1,18 @@
 package com.group.eBookManagementSystem.GUI;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -26,6 +33,8 @@ public class LoginWindow {
 
     public LoginWindow() {
         singletonWindow = SingletonWindow.getInstance();
+        singletonWindow.getContentPane().removeAll();
+        singletonWindow.repaint();
         JPanel panel = new JPanel();
         JLabel usernameLabel = new JLabel("Username:");
         usernameField = new JTextField(20);
@@ -60,7 +69,7 @@ public class LoginWindow {
         panel.add(registerButton);
         panel.add(alarmField);
 
-        singletonWindow.getContentPane().add(panel, BorderLayout.CENTER);
+        singletonWindow.add(panel);
         singletonWindow.setSize(300, 300);
         singletonWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         singletonWindow.setLocationRelativeTo(null);
@@ -74,7 +83,13 @@ public class LoginWindow {
         String ans = sendLoginRequest(userName, password);
         LOG.info(String.format("Response %s", ans));
         if (ans.equals("true")) {
-            javax.swing.SwingUtilities.invokeLater(new AccountWindow(userName));
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    AccountWindow accountWindow = new AccountWindow(usernameField.getText());
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            });
         } else {
             alarmField.setText("The UserName and Password do not match!");
         }
@@ -103,6 +118,7 @@ public class LoginWindow {
 
     public void register() {
         javax.swing.SwingUtilities.invokeLater(RegisterWindow::new);
+
     }
 
     public static void main(String[] args) {

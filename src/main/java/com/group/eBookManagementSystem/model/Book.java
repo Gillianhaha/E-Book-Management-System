@@ -11,7 +11,6 @@ import lombok.Setter;
 @Setter
 @Getter
 public class Book {
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
