@@ -1,9 +1,9 @@
-package com.group.eBookManagementSystem.GUI;
+package com.group.eBookManagementSystem.gui;
 
+import javax.swing.JFrame;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.swing.*;
 @Getter
 @Setter
 public class SingletonWindow extends JFrame {

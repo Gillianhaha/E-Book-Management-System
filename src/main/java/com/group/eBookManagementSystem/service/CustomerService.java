@@ -1,87 +1,100 @@
 package com.group.eBookManagementSystem.service;
 
 import com.group.eBookManagementSystem.model.Customer;
+import com.group.eBookManagementSystem.repository.BookRepository;
 import com.group.eBookManagementSystem.repository.CustomerRepository;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 public class CustomerService {
+
     private static final Logger LOG = LoggerFactory.getLogger(CustomerService.class);
+
     @Autowired
     private CustomerRepository customerRepository;
 
+    @Autowired
+    private BookRepository bookRepository;
+
     public void addCustomer(Customer customer) throws Exception {
-        if (!checkExist(customer.getUserName())) {
-            List<Customer> customerList = (List<Customer>) getCustomers();
-            if (customerList.size() == 0) {
-                customer.setRole(Customer.Role.ADMIN);
-            } else {
-                customer.setRole(Customer.Role.USER);
-            }
-            customerRepository.save(customer);
+        String userName = customer.getUserName();
+        if (existByUserName(userName)) {
+            throw new IllegalArgumentException(String.format("UserName Occupied: %s", userName));
+        }
+
+        verifyBookList(customer);
+
+        setCustomerRole(customer);
+
+        customerRepository.save(customer);
+    }
+
+    private void setCustomerRole(Customer customer) {
+        List<Customer> customerList = (List<Customer>) getCustomers();
+        if (customerList.size() == 0) {
+            customer.setRole(Customer.Role.ADMIN);
         } else {
-            throw new Exception("UserName Occupied.");
+            customer.setRole(Customer.Role.USER);
         }
     }
 
-    public Iterable<Customer> getCustomers() {
-        return customerRepository.findAll();
+    private void verifyBookList(Customer customer) {
+        List<Integer> bookIdList = customer.getMyLibrary();
+        for (Integer bookId : bookIdList) {
+            if (!bookRepository.existsById(bookId)) {
+                throw new IllegalArgumentException(String.format("Book %d does not exist.", bookId));
+            }
+        }
+    }
+
+    public List<Customer> getCustomers() {
+        return (List<Customer>) customerRepository.findAll();
     }
 
     public Customer findCustomerByUserName(String userName) {
-        return customerRepository.findCustomerByUserName(userName);
+        if (existByUserName(userName)) {
+            return customerRepository.findCustomerByUserName(userName);
+        } else {
+            throw new IllegalArgumentException(String.format("User %s does not exist.", userName));
+        }
     }
 
-//    public void updateCustomer(String userName, String firstName, String lastName, String email) {
-//        Customer customer = customerRepository.findCustomerByUserName(userName);
-//        customer.setFirstName(firstName);
-//        customer.setLastName(lastName);
-//        customer.setEmail(email);
-//
-//        customerRepository.save(customer);
-//    }
+    public void updateCustomer(Customer customer) {
+        String userName = customer.getUserName();
+        if (!existByUserName(userName)) {
+            throw new IllegalArgumentException(String.format("User %s does not exist.", userName));
+        }
 
-    public void updateCustomer(String userName, Customer customer) {
+        verifyBookList(customer);
+
         customerRepository.save(customer);
     }
 
     @Transactional
     public void deleteCustomer(String userName) {
-        LOG.info("userName:", userName);
-        customerRepository.deleteCustomerByUserName(userName);
+        if (existByUserName(userName)) {
+            customerRepository.deleteCustomerByUserName(userName);
+        } else {
+            throw new IllegalArgumentException(String.format("User %s does not exist.", userName));
+        }
     }
 
-    public void addBookToCustomer(String userName, Integer bookID) {
-        Customer customer = findCustomerByUserName(userName);
-        List<Integer> library = customer.getMyLibrary();
-        library.add(bookID);
-        customer.setMyLibrary(library);
-
-        customerRepository.save(customer);
+    public void logInUser(String userName, String password) {
+        if (existByUserName(userName)) {
+            if (!password.equals(customerRepository.findCustomerByUserName(userName).getPassword())) {
+                throw new IllegalArgumentException("UserName and Password don't match");
+            }
+        } else {
+            throw new IllegalArgumentException(String.format("User %s does not exist.", userName));
+        }
     }
 
-    public void deleteBookFromCustomer(String userName, Integer bookID) {
-        Customer customer = findCustomerByUserName(userName);
-        List<Integer> library = customer.getMyLibrary();
-        library.remove(bookID);
-        customer.setMyLibrary(library);
-
-        customerRepository.save(customer);
-    }
-
-    public boolean verifyUser(String userName, String password) {
-        boolean res = password.equals(customerRepository.findCustomerByUserName(userName).getPassword());
-        LOG.info(String.format("Result of verify user %b", res));
-        return res;
-    }
-
-    public boolean checkExist(String userName) {
+    public boolean existByUserName(String userName) {
         return customerRepository.existsById(userName);
     }
 
@@ -92,16 +105,20 @@ public class CustomerService {
                 return customer.getUserName();
             }
         }
-        return "";
+        throw new IllegalArgumentException("No Admin found");
     }
 
-    public void removeBookForAllCustomers(Integer bookID) {
-        List<Customer> customerList = (List<Customer>) getCustomers();
-        for (Customer customer : customerList) {
-            List<Integer> myLibrary = customer.getMyLibrary();
-            myLibrary.remove(bookID);
-            customer.setMyLibrary(myLibrary);
-            customerRepository.save(customer);
+    public void removeBookForAllCustomers(Integer bookId) {
+        if (bookRepository.existsById(bookId)) {
+            List<Customer> customerList = (List<Customer>) getCustomers();
+            for (Customer customer : customerList) {
+                List<Integer> myLibrary = customer.getMyLibrary();
+                myLibrary.remove(bookId);
+                customer.setMyLibrary(myLibrary);
+                customerRepository.save(customer);
+            }
+        } else {
+            throw new IllegalArgumentException(String.format("Book with bookId %s does not exist.", bookId));
         }
     }
 }

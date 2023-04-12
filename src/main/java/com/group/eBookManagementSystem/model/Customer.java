@@ -5,10 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 @Entity
 @Setter
@@ -22,7 +22,7 @@ public class Customer {
     private String password;
     private String email;
     @ElementCollection
-    private List<Integer> myLibrary;
+    private List<Integer> myLibrary = new ArrayList<Integer>();
     @Enumerated(EnumType.STRING)
     private Role role;
 

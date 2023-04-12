@@ -1,16 +1,7 @@
-package com.group.eBookManagementSystem.GUI;
+package com.group.eBookManagementSystem.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.group.eBookManagementSystem.model.Customer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -21,9 +12,18 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RegisterWindow {
-    private static final Logger LOG = LoggerFactory.getLogger(LoginWindow.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RegisterWindow.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private final SingletonWindow singletonWindow;
     private final JTextField usernameField;
@@ -111,6 +111,8 @@ public class RegisterWindow {
             out.write(payload);
             out.close();
 
+            statusCode = con.getResponseCode();
+
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String inputLine;
 
@@ -118,7 +120,6 @@ public class RegisterWindow {
                 response.append(inputLine);
             }
             in.close();
-            statusCode = con.getResponseCode();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -126,9 +127,11 @@ public class RegisterWindow {
         LOG.info(String.format("Response %s", response));
         if (statusCode == 200) {
             LOG.info("Registered!");
-            javax.swing.SwingUtilities.invokeLater(LoginWindow::new);
-        } else {
-            alarmField.setText("Failed!");
+            SwingUtilities.invokeLater(LoginWindow::new);
+        } else if (statusCode == 400) {
+            alarmField.setText("User Error");
+        } else if (statusCode == 500) {
+            alarmField.setText("System Error");
         }
     }
 
