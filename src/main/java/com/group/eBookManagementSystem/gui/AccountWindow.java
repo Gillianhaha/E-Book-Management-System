@@ -49,8 +49,8 @@ public class AccountWindow {
         singletonWindow.repaint();
 
         JPanel userPanel = new JPanel();
-        List<Integer> bookIDList = customer.getMyLibrary();
-        String[][] booksData = buildBookList(bookIDList);
+        List<Integer> bookIdList = customer.getMyLibrary();
+        String[][] booksData = buildBookList(bookIdList);
         String[] columnNames = {"BookID", "BookName", "Author", "Subject", "Content", "Rate"};
         userTable = new JTable(booksData, columnNames);
         JScrollPane tablePane = new JScrollPane(userTable);
