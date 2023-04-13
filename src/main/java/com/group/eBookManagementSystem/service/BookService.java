@@ -21,7 +21,7 @@ public class BookService {
     private CustomerService customerService;
 
     public void addBook(Book book) {
-        if (!existByBookId(book.getId())) {
+        if (book.getId() == null) {
             bookRepository.save(book);
         } else {
             throw new IllegalArgumentException(String.format("Book %d already exists.", book.getId()));

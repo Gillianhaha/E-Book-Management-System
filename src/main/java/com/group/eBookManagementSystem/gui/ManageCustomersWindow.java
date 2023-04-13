@@ -1,16 +1,12 @@
 package com.group.eBookManagementSystem.gui;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.group.eBookManagementSystem.gui.utlils.HttpRequestUtils;
 import com.group.eBookManagementSystem.model.Customer;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
@@ -34,12 +30,8 @@ public class ManageCustomersWindow {
     private final JButton deleteButton;
     private final JTextField alarmField;
 
-    public ManageCustomersWindow() throws JsonProcessingException {
-        String allUsers = findAllCustomer();
-        LOG.info("AllUsers:" + allUsers);
-        List<Customer> allCustomers = new ObjectMapper().readValue(allUsers, new TypeReference<List<Customer>>() {
-        });
-        LOG.info("Size:" + allCustomers.size());
+    public ManageCustomersWindow() {
+        List<Customer> allCustomers = handleFindAllCustomersRequest();
 
         singletonWindow = SingletonWindow.getInstance();
         singletonWindow.getContentPane().removeAll();
@@ -63,37 +55,16 @@ public class ManageCustomersWindow {
         userNameField = new JTextField(20);
 
         deleteButton = new JButton("Delete");
-        deleteButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                String response = findByUserNameRequest(userNameField.getText());
-                LOG.info("res:" + response);
-                if (response.equals("")) {
-                    alarmField.setText("Username does not exist！");
-                } else {
-                    deleteCustomerByUserName();
-                }
-            }
-        });
+        deleteButton.addActionListener(event -> handleDeleteCustomerByUserNameRequest());
         alarmField = new JTextField(20);
         alarmField.setForeground(Color.red);
         alarmField.setBorder(null);
         alarmField.setBackground(null);
 
         JButton goBackButton = new JButton("Go Back");
-        goBackButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                String userName = getUserName();
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        AccountWindow accountWindow = new AccountWindow(userName);
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-        });
+        goBackButton.addActionListener(event -> SwingUtilities.invokeLater(() -> {
+            AccountWindow accountWindow = new AccountWindow(handleGetAdminName());
+        }));
 
         panel.add(userNameLabel);
         panel.add(userNameField);
@@ -109,99 +80,62 @@ public class ManageCustomersWindow {
         singletonWindow.setVisible(true);
     }
 
-    public String deleteCustomerByUserName() {
+    public void handleDeleteCustomerByUserNameRequest() {
         try {
             URL url = new URL("http://localhost:8080/deleteCustomer?userName=" + userNameField.getText());
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setDoOutput(true);
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            String[] response = HttpRequestUtils.sendPostRequest(url);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleDeleteCustomerByUserNameRequest: %s", responseMessage));
+            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
+                SwingUtilities.invokeLater(ManageCustomersWindow::new);
+            } else {
+                alarmField.setText(responseMessage);
+                LOG.error("handleDeleteCustomerByUserNameRequest failed: " + responseMessage);
             }
-            in.close();
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    ManageCustomersWindow manageCustomersWindow = new ManageCustomersWindow();
-                } catch (JsonProcessingException e) {
-
-                    throw new RuntimeException(e);
-                }
-            });
-            return response.toString();
         } catch (IOException e) {
             e.printStackTrace();
-
-            return "Error: " + e.getMessage();
+            LOG.error("handleDeleteCustomerByUserNameRequest failed: " + e);
         }
     }
 
-    private static String findByUserNameRequest(String userName) {
-        try {
-            URL url = new URL(String.format("http://localhost:8080/findCustomerByUserName/%s", userName));
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
-
-            return response.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "Error: " + e.getMessage();
-        }
-    }
-
-    public static String findAllCustomer() {
+    public List<Customer> handleFindAllCustomersRequest() {
         try {
             URL url = new URL("http://localhost:8080/listCustomers");
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setDoOutput(true);
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            String[] response = HttpRequestUtils.sendGetRequest(url);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleFindAllCustomersRequest: %s", responseMessage));
+            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
+                return new ObjectMapper().readValue(responseMessage, new TypeReference<List<Customer>>() {});
+            } else {
+                LOG.error("handleFindAllCustomersRequest failed: " + responseMessage);
+                throw new RuntimeException(responseMessage);
             }
-            in.close();
-
-            return response.toString();
-
         } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error("handleFindAllCustomersRequest failed: " + e);
             throw new RuntimeException(e);
         }
     }
 
-    private static String getUserName() {
+    private String handleGetAdminName() {
         try {
             URL url = new URL("http://localhost:8080/getAdminName");
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            String[] response = HttpRequestUtils.sendGetRequest(url);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleGetAdminName: %s", responseMessage));
+            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
+                return responseMessage;
+            } else {
+                LOG.error("handleGetAdminName failed: " + responseMessage);
+                throw new RuntimeException(responseMessage);
             }
-            in.close();
-
-            return response.toString();
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error: " + e.getMessage();
+            LOG.error("handleGetAdminName failed: " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 

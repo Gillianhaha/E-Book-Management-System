@@ -1,16 +1,11 @@
 package com.group.eBookManagementSystem.gui;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.group.eBookManagementSystem.gui.utlils.HttpRequestUtils;
 import com.group.eBookManagementSystem.model.Book;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import javax.swing.JButton;
@@ -52,18 +47,9 @@ public class AddNewBookWindow {
         alarmField.setBorder(null);
         alarmField.setBackground(null);
         alarmField.setForeground(Color.red);
-        submitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                submit();
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        ManageBooksWindow manageBooksWindow = new ManageBooksWindow();
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
+        submitButton.addActionListener(event -> {
+            handleAddBookRequest();
+            SwingUtilities.invokeLater(ManageBooksWindow::new);
         });
 
         panel.add(bookNameLabel);
@@ -84,52 +70,26 @@ public class AddNewBookWindow {
         singletonWindow.setVisible(true);
     }
 
-
-    public void submit() {
-        String bookName = bookNameField.getText();
-        String author = authorField.getText();
-        String subject = subjectField.getText();
-        String content = contentField.getText();
-        int statusCode = -1;
-        StringBuilder response = new StringBuilder();
-
-        try {
+    public void handleAddBookRequest() {
+        try{
             Book book = new Book();
-            book.setBookName(bookName);
-            book.setAuthor(author);
-            book.setSubject(subject);
-            book.setContent(content);
+            book.setBookName(bookNameField.getText());
+            book.setAuthor(authorField.getText());
+            book.setSubject(subjectField.getText());
+            book.setContent(contentField.getText());
 
             URL url = new URL("http://localhost:8080/addBook");
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setDoOutput(true);
-
-            String payload = objectMapper.writeValueAsString(book);
-            OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-            out.write(payload);
-            out.close();
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            String[] response = HttpRequestUtils.sendPostRequest(url, book);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleAddBookRequest: %s", responseMessage));
+            if (responseStatusCode != HttpURLConnection.HTTP_OK) {
+                alarmField.setText(responseMessage);
             }
-            in.close();
-            statusCode = con.getResponseCode();
         } catch (IOException e) {
             e.printStackTrace();
+            LOG.error("handleAddBookRequest failed: " + e.getMessage());
         }
-
-        LOG.info(String.format("Response %s", response));
-//        if (statusCode == 200) {
-//            LOG.info("Added!");
-//            javax.swing.SwingUtilities.invokeLater(LoginWindow::new);
-//        } else {
-//            alarmField.setText("Failed to add!" + response);
-//        }
     }
 
 }

@@ -1,15 +1,11 @@
 package com.group.eBookManagementSystem.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.group.eBookManagementSystem.gui.utlils.HttpRequestUtils;
 import com.group.eBookManagementSystem.model.Customer;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import javax.swing.JButton;
@@ -55,12 +51,7 @@ public class RegisterWindow {
         alarmField.setBorder(null);
         alarmField.setBackground(null);
         alarmField.setForeground(Color.red);
-        submitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                submit();
-            }
-        });
+        submitButton.addActionListener(e -> handleRegisterRequest());
 
         panel.add(usernameLabel);
         panel.add(usernameField);
@@ -83,55 +74,28 @@ public class RegisterWindow {
     }
 
 
-    public void submit() {
-        String userName = usernameField.getText();
-        String firstName = firstnameField.getText();
-        String lastName = lastnameField.getText();
-        String password = passwordField.getText();
-        String email = emailField.getText();
-        int statusCode = -1;
-        StringBuilder response = new StringBuilder();
-
+    public void handleRegisterRequest() {
         try {
             Customer customer = new Customer();
-            customer.setUserName(userName);
-            customer.setPassword(password);
-            customer.setEmail(email);
-            customer.setLastName(lastName);
-            customer.setFirstName(firstName);
+            customer.setUserName(usernameField.getText());
+            customer.setPassword(passwordField.getText());
+            customer.setEmail(emailField.getText());
+            customer.setLastName(lastnameField.getText());
+            customer.setFirstName(firstnameField.getText());
 
             URL url = new URL("http://localhost:8080/addCustomer");
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setDoOutput(true);
-
-            String payload = objectMapper.writeValueAsString(customer);
-            OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-            out.write(payload);
-            out.close();
-
-            statusCode = con.getResponseCode();
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            String[] response = HttpRequestUtils.sendPostRequest(url, customer);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleRegisterRequest: %s", responseMessage));
+            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
+                SwingUtilities.invokeLater(LoginWindow::new);
+            } else {
+                alarmField.setText(responseMessage);
             }
-            in.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-
-        LOG.info(String.format("Response %s", response));
-        if (statusCode == 200) {
-            LOG.info("Registered!");
-            SwingUtilities.invokeLater(LoginWindow::new);
-        } else if (statusCode == 400) {
-            alarmField.setText("User Error");
-        } else if (statusCode == 500) {
-            alarmField.setText("System Error");
+            LOG.error("handleRegisterRequest failed: " + e.getMessage());
         }
     }
 

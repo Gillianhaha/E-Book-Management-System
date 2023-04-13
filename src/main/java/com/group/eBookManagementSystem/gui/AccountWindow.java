@@ -1,18 +1,13 @@
 package com.group.eBookManagementSystem.gui;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.group.eBookManagementSystem.gui.utlils.HttpRequestUtils;
 import com.group.eBookManagementSystem.model.Book;
 import com.group.eBookManagementSystem.model.Customer;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Collections;
@@ -44,10 +39,9 @@ public class AccountWindow {
     private final Customer customer;
     private final JTextField alarmField;
 
-    public AccountWindow(String userName) throws JsonProcessingException {
+    public AccountWindow(String userName) {
         this.userName = userName;
-        String customerInfo = findByUserNameRequest(userName);
-        customer = objectMapper.readValue(customerInfo, Customer.class);
+        customer = handleFindByUserNameRequest(userName);
         boolean isAdmin = customer.getRole() == Customer.Role.ADMIN;
 
         singletonWindow = SingletonWindow.getInstance();
@@ -66,46 +60,22 @@ public class AccountWindow {
         bookNameField = new JTextField(20);
 
         addButton = new JButton("Add");
-        addButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                addBookToCustomer(Integer.valueOf(bookNameField.getText()));
-            }
-        });
+        addButton.addActionListener(event -> addBookToCustomer(Integer.valueOf(bookNameField.getText())));
 
         deleteButton = new JButton("Delete");
-        deleteButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                deleteBookFromCustomer(Integer.valueOf(bookNameField.getText()));
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        AccountWindow accountWindow = new AccountWindow(userName);
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-        });
+        deleteButton.addActionListener(event -> deleteBookFromCustomer(Integer.valueOf(bookNameField.getText())));
 
         JLabel bookRateLabel = new JLabel("Enter rating:");
         rateBookField = new JTextField(20);
         rateButton = new JButton("Rate It");
-        rateButton.addActionListener((new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                rateBook(Integer.valueOf(bookNameField.getText()), Integer.valueOf(rateBookField.getText()));
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        AccountWindow accountWindow = new AccountWindow(userName);
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
+        rateButton.addActionListener((event -> {
+            handleRateBookRequest(Integer.valueOf(bookNameField.getText()), Integer.valueOf(rateBookField.getText()));
+            SwingUtilities.invokeLater(() -> {
+                AccountWindow accountWindow = new AccountWindow(userName);
+            });
         }));
 
-        alarmField = new JTextField(20);
+        alarmField = new JTextField(30);
         alarmField.setBorder(null);
         alarmField.setBackground(null);
         alarmField.setForeground(Color.red);
@@ -123,31 +93,9 @@ public class AccountWindow {
 
         JPanel adminPanel = new JPanel();
         booksButton = new JButton("Manage Books");
-        booksButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        ManageBooksWindow manageBooksWindow = new ManageBooksWindow();
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-        });
+        booksButton.addActionListener(event -> SwingUtilities.invokeLater(ManageBooksWindow::new));
         usersButton = new JButton("Manage Users");
-        usersButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        ManageCustomersWindow manageCustomersWindow = new ManageCustomersWindow();
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-        });
+        usersButton.addActionListener(event -> SwingUtilities.invokeLater(ManageCustomersWindow::new));
 
         adminPanel.add(booksButton);
         adminPanel.add(usersButton);
@@ -165,35 +113,30 @@ public class AccountWindow {
         singletonWindow.setVisible(true);
     }
 
-    private static String findByUserNameRequest(String userName) {
+    private Customer handleFindByUserNameRequest(String userName) {
         try {
             URL url = new URL(String.format("http://localhost:8080/findCustomerByUserName/%s", userName));
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            String[] response = HttpRequestUtils.sendGetRequest(url);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleFindByUserNameRequest: %s", responseMessage));
+            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
+                return objectMapper.readValue(responseMessage, Customer.class);
+            } else {
+                throw new RuntimeException(responseMessage);
             }
-            in.close();
-
-            return response.toString();
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error: " + e.getMessage();
+            LOG.error("handleFindByUserNameRequest failed: " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
-    public String[][] buildBookList(List<Integer> bookIDList) throws JsonProcessingException {
-        String[][] booksData = new String[bookIDList.size()][6];
-        LOG.info(String.valueOf(bookIDList.size()));
-        for (int i = 0; i < bookIDList.size(); i++) {
-            String response = findBookByIDRequest(bookIDList.get(i));
-            LOG.info(response);
-
-            Book book = objectMapper.readValue(response, Book.class);
+    public String[][] buildBookList(List<Integer> bookIdList) {
+        String[][] booksData = new String[bookIdList.size()][6];
+        LOG.info(String.valueOf(bookIdList.size()));
+        for (int i = 0; i < bookIdList.size(); i++) {
+            Book book = handleFindBookByIdRequest(bookIdList.get(i));
             booksData[i][0] = book.getId().toString();
             booksData[i][1] = book.getBookName();
             booksData[i][2] = book.getAuthor();
@@ -204,103 +147,96 @@ public class AccountWindow {
         return booksData;
     }
 
-    private static String findBookByIDRequest(Integer bookID) {
+    private Book handleFindBookByIdRequest(Integer bookId) {
         try {
-            URL url = new URL(String.format("http://localhost:8080/findBookByID/%s", bookID));
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            URL url = new URL(String.format("http://localhost:8080/findBookById/%s", bookId));
+            String[] response = HttpRequestUtils.sendGetRequest(url);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleFindBookByIdRequest: %s", responseMessage));
+            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
+                return objectMapper.readValue(responseMessage, Book.class);
+            } else {
+                alarmField.setText(responseMessage);
+                LOG.error("handleFindBookByIdRequest failed: " + responseMessage);
+                throw new RuntimeException(responseMessage);
             }
-            in.close();
-
-            return response.toString();
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error: " + e.getMessage();
+            LOG.error("handleFindBookByIdRequest failed: " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
-    public void manageCustomerBooks() {
-        StringBuilder response = new StringBuilder();
-        int statusCode = 0;
-
+    public void handleUpdateCustomerRequest(Customer customer) {
         try {
-            URL url = new URL(String.format("http://localhost:8080/updateCustomerByUserName/%s", userName));
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setDoOutput(true);
-
-            String payload = objectMapper.writeValueAsString(customer);
-            OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-            out.write(payload);
-            out.close();
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            URL url = new URL("http://localhost:8080/updateCustomer");
+            String[] response = HttpRequestUtils.sendPostRequest(url, customer);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleUpdateCustomerRequest: %s", responseMessage));
+            if (responseStatusCode != HttpURLConnection.HTTP_OK) {
+                alarmField.setText(responseMessage);
+            } else {
+                SwingUtilities.invokeLater(() -> {
+                    AccountWindow updateAccountWindow = new AccountWindow(customer.getUserName());
+                });
             }
-            in.close();
-            statusCode = con.getResponseCode();
         } catch (IOException e) {
             e.printStackTrace();
+            LOG.error("handleUpdateCustomerRequest failed: " + e.getMessage());
         }
     }
 
-    public void deleteBookFromCustomer(Integer bookID) {
+    public void deleteBookFromCustomer(Integer bookId) {
         List<Integer> bookList = customer.getMyLibrary();
-        bookList.removeAll(Collections.singletonList(bookID));
-        customer.setMyLibrary(bookList);
-
-        manageCustomerBooks();
-    }
-
-    public void addBookToCustomer(Integer bookID) {
-        List<Integer> bookList = customer.getMyLibrary();
-        if (!bookList.contains(bookID)) {
-            bookList.add(bookID);
+        if (bookList.contains(bookId)) {
+            bookList.removeAll(Collections.singletonList(bookId));
             customer.setMyLibrary(bookList);
-            manageCustomerBooks();
+            handleUpdateCustomerRequest(customer);
 
             SwingUtilities.invokeLater(() -> {
-                try {
-                    AccountWindow updateAccountWindow = new AccountWindow(customer.getUserName());
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
+                AccountWindow accountWindow = new AccountWindow(userName);
             });
+        } else {
+            alarmField.setText(String.format("User %s does not have book %s.", userName, bookId));
+        }
+    }
+
+    public void addBookToCustomer(Integer bookId) {
+        List<Integer> bookList = customer.getMyLibrary();
+        LOG.info(String.format("addBookToCustomer started: adding book %s to user %s", bookId, userName));
+        LOG.info(String.format("addBookToCustomer started: user current book list %s", bookList));
+        if (!bookList.contains(bookId)) {
+            bookList.add(bookId);
+            customer.setMyLibrary(bookList);
+            handleUpdateCustomerRequest(customer);
+            bookList.remove(bookId);
+            customer.setMyLibrary(bookList);
         } else {
             alarmField.setText("This book is already in your Library!");
         }
-
-
     }
 
-    public void rateBook(Integer bookID, Integer rate) {
+    public void handleRateBookRequest(Integer bookId, Integer rate) {
         try {
-            URL url = new URL(String.format("http://localhost:8080/rateBook/%s?rate=%s", bookID, rate));
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setDoOutput(true);
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            List<Integer> bookIdList = handleFindByUserNameRequest(userName).getMyLibrary();
+            if (!bookIdList.contains(bookId)) {
+                String errorMessage = String.format("User %s does not have book %d, so can not rate it!", userName, bookId);
+                alarmField.setText(errorMessage);
+                throw new IllegalArgumentException(errorMessage);
             }
-            in.close();
-
+            URL url = new URL(String.format("http://localhost:8080/rateBook/%s?rate=%s", bookId, rate));
+            String[] response = HttpRequestUtils.sendPostRequest(url);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleRateBookRequest: %s", responseMessage));
+            if (responseStatusCode != HttpURLConnection.HTTP_OK) {
+                alarmField.setText(responseMessage);
+            }
         } catch (IOException e) {
             e.printStackTrace();
+            LOG.error("handleRateBookRequest failed: " + e.getMessage());
         }
     }
 

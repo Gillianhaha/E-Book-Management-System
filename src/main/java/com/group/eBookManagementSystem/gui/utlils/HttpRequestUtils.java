@@ -47,6 +47,10 @@ public class HttpRequestUtils {
         }
     }
 
+    public static String[] sendPostRequest(URL url) {
+        return sendPostRequest(url, null);
+    }
+
     public static String[] sendPostRequest(URL url, Object requestBody) {
         try {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -54,11 +58,13 @@ public class HttpRequestUtils {
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setDoOutput(true);
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            String payload = objectMapper.writeValueAsString(requestBody);
-            OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
-            out.write(payload);
-            out.close();
+            if (requestBody != null) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                String payload = objectMapper.writeValueAsString(requestBody);
+                OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
+                out.write(payload);
+                out.close();
+            }
 
             int responseCode = connection.getResponseCode();
 

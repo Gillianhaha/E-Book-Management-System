@@ -1,12 +1,8 @@
 package com.group.eBookManagementSystem.gui;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.group.eBookManagementSystem.gui.utlils.HttpRequestUtils;
 import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import javax.swing.JButton;
@@ -40,20 +36,10 @@ public class LoginWindow {
         JLabel passwordLabel = new JLabel("Password:");
         passwordField = new JPasswordField(20);
         loginButton = new JButton("Log in");
-        loginButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                login();
-            }
-        });
+        loginButton.addActionListener(e -> handleLoginRequest());
 
         registerButton = new JButton("Sign up");
-        registerButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                register();
-            }
-        });
+        registerButton.addActionListener(e -> SwingUtilities.invokeLater(RegisterWindow::new));
 
         alarmField = new JTextField(20);
         alarmField.setBackground(null);
@@ -76,51 +62,29 @@ public class LoginWindow {
     }
 
 
-    public void login() {
-        String userName = usernameField.getText();
-        String password = passwordField.getText();
-        String ans = sendLoginRequest(userName, password);
-        LOG.info(String.format("Response %s", ans));
-        if (ans.equals("true")) {
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    AccountWindow accountWindow = new AccountWindow(usernameField.getText());
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        } else {
-            alarmField.setText("The UserName and Password do not match!");
-        }
-    }
-
-    private static String sendLoginRequest(String userName, String password) {
+    public void handleLoginRequest() {
         try {
+            String userName = usernameField.getText();
+            String password = passwordField.getText();
             URL url = new URL(String.format("http://localhost:8080/login?userName=%s&password=%s", userName, password));
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            String[] response = HttpRequestUtils.sendGetRequest(url);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleLoginRequest: %s", responseMessage));
+            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
+                SwingUtilities.invokeLater(() -> {
+                    AccountWindow accountWindow = new AccountWindow(usernameField.getText());
+                });
+            } else {
+                alarmField.setText(responseMessage);
             }
-            in.close();
-
-            return response.toString();
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error: " + e.getMessage();
+            LOG.error("handleLoginRequest failed: " + e.getMessage());
         }
-    }
-
-    public void register() {
-        javax.swing.SwingUtilities.invokeLater(RegisterWindow::new);
-
     }
 
     public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(LoginWindow::new);
+        SwingUtilities.invokeLater(LoginWindow::new);
     }
 }

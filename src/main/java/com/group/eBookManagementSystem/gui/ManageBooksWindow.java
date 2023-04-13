@@ -1,16 +1,12 @@
 package com.group.eBookManagementSystem.gui;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.group.eBookManagementSystem.gui.utlils.HttpRequestUtils;
 import com.group.eBookManagementSystem.model.Book;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
@@ -36,12 +32,8 @@ public class ManageBooksWindow {
     private final JButton addNewBookButton;
     private final JTextField alarmField;
 
-    public ManageBooksWindow() throws JsonProcessingException {
-        String allBooks = findAllBooks();
-        LOG.info("AllBooks:" + allBooks);
-        List<Book> bookList = new ObjectMapper().readValue(allBooks, new TypeReference<List<Book>>() {
-        });
-        LOG.info("Size:" + bookList.size());
+    public ManageBooksWindow() {
+        List<Book> bookList = handleFindAllBooksRequest();
 
         singletonWindow = SingletonWindow.getInstance();
         singletonWindow.getContentPane().removeAll();
@@ -66,44 +58,20 @@ public class ManageBooksWindow {
         bookIDField = new JTextField(20);
 
         deleteBookButton = new JButton("Delete");
-        deleteBookButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                String response = findBookByIDRequest(Integer.parseInt(bookIDField.getText()));
-                LOG.info("res:" + response);
-                if (response.equals("")) {
-                    alarmField.setText("BookID does not exist！");
-                } else {
-                    deleteBookByID();
-                }
-            }
-        });
+        deleteBookButton.addActionListener(event -> handleDeleteBookRequest());
 
         addNewBookButton = new JButton(("Add a New Book"));
-        addNewBookButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                javax.swing.SwingUtilities.invokeLater(AddNewBookWindow::new);
-            }
-        });
+        addNewBookButton.addActionListener(event -> SwingUtilities.invokeLater(AddNewBookWindow::new));
 
         alarmField = new JTextField(20);
         alarmField.setForeground(Color.red);
         alarmField.setBorder(null);
         alarmField.setBackground(null);
         JButton goBackButton = new JButton("Go Back");
-        goBackButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                String userName = getUserName();
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        AccountWindow accountWindow = new AccountWindow(userName);
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
+        goBackButton.addActionListener(event -> {
+            SwingUtilities.invokeLater(() -> {
+                AccountWindow accountWindow = new AccountWindow(handleGetAdminName());
+            });
         });
 
         panel.add(bookIDLabel);
@@ -121,98 +89,63 @@ public class ManageBooksWindow {
         singletonWindow.setVisible(true);
     }
 
-    public String deleteBookByID() {
+    public void handleDeleteBookRequest() {
         try {
             URL url = new URL("http://localhost:8080/deleteBook?id=" + Integer.parseInt(bookIDField.getText()));
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setDoOutput(true);
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            String[] response = HttpRequestUtils.sendPostRequest(url);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleDeleteBookRequest: %s", responseMessage));
+            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
+                SwingUtilities.invokeLater(ManageBooksWindow::new);
+            } else {
+                alarmField.setText(responseMessage);
+                LOG.error("handleDeleteBookRequest failed: " + responseMessage);
             }
-            in.close();
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    ManageBooksWindow manageBooksWindow = new ManageBooksWindow();
-                } catch (JsonProcessingException e) {
-
-                    throw new RuntimeException(e);
-                }
-            });
-            return response.toString();
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error: " + e.getMessage();
+            LOG.error("handleDeleteBookRequest failed: " + e.getMessage());
         }
     }
 
-    private static String findBookByIDRequest(Integer bookID) {
-        try {
-            URL url = new URL(String.format("http://localhost:8080/findBookByID/%s", bookID));
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
-
-            return response.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "Error: " + e.getMessage();
-        }
-    }
-
-    public static String findAllBooks() {
+    private List<Book> handleFindAllBooksRequest() {
         try {
             URL url = new URL("http://localhost:8080/listBooks");
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setDoOutput(true);
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            String[] response = HttpRequestUtils.sendGetRequest(url);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleFindAllBooksRequest: %s", responseMessage));
+            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
+                return objectMapper.readValue(responseMessage, new TypeReference<List<Book>>() {});
+            } else {
+                alarmField.setText(responseMessage);
+                LOG.error("handleFindAllBooksRequest failed: " + responseMessage);
+                throw new RuntimeException(responseMessage);
             }
-            in.close();
-
-            return response.toString();
-
         } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error("handleFindAllBooksRequest failed: " + e);
             throw new RuntimeException(e);
         }
     }
 
-    private static String getUserName() {
+    private String handleGetAdminName() {
         try {
             URL url = new URL("http://localhost:8080/getAdminName");
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            String[] response = HttpRequestUtils.sendGetRequest(url);
+            int responseStatusCode = Integer.parseInt(response[0]);
+            String responseMessage = response[1];
+            LOG.info(String.format("Response of handleGetAdminName: %s", responseMessage));
+            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
+                return responseMessage;
+            } else {
+                LOG.error("handleGetAdminName failed: " + responseMessage);
+                throw new RuntimeException(responseMessage);
             }
-            in.close();
-
-            return response.toString();
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error: " + e.getMessage();
+            LOG.error("handleGetAdminName failed: " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 }
