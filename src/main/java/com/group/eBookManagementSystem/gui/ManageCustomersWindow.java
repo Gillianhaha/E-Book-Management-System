@@ -22,8 +22,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ManageCustomersWindow {
+
     private static final Logger LOG = LoggerFactory.getLogger(ManageCustomersWindow.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
     private final SingletonWindow singletonWindow;
     private final JTable userTable;
     private final JTextField userNameField;
@@ -63,7 +65,7 @@ public class ManageCustomersWindow {
 
         JButton goBackButton = new JButton("Go Back");
         goBackButton.addActionListener(event -> SwingUtilities.invokeLater(() -> {
-            AccountWindow accountWindow = new AccountWindow(handleGetAdminName());
+            AccountWindow accountWindow = new AccountWindow(HttpRequestUtils.handleGetAdminName());
         }));
 
         panel.add(userNameLabel);
@@ -80,7 +82,7 @@ public class ManageCustomersWindow {
         singletonWindow.setVisible(true);
     }
 
-    public void handleDeleteCustomerByUserNameRequest() {
+    private void handleDeleteCustomerByUserNameRequest() {
         try {
             URL url = new URL("http://localhost:8080/deleteCustomer?userName=" + userNameField.getText());
             String[] response = HttpRequestUtils.sendPostRequest(url);
@@ -99,7 +101,7 @@ public class ManageCustomersWindow {
         }
     }
 
-    public List<Customer> handleFindAllCustomersRequest() {
+    private List<Customer> handleFindAllCustomersRequest() {
         try {
             URL url = new URL("http://localhost:8080/listCustomers");
             String[] response = HttpRequestUtils.sendGetRequest(url);
@@ -115,26 +117,6 @@ public class ManageCustomersWindow {
         } catch (IOException e) {
             e.printStackTrace();
             LOG.error("handleFindAllCustomersRequest failed: " + e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String handleGetAdminName() {
-        try {
-            URL url = new URL("http://localhost:8080/getAdminName");
-            String[] response = HttpRequestUtils.sendGetRequest(url);
-            int responseStatusCode = Integer.parseInt(response[0]);
-            String responseMessage = response[1];
-            LOG.info(String.format("Response of handleGetAdminName: %s", responseMessage));
-            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
-                return responseMessage;
-            } else {
-                LOG.error("handleGetAdminName failed: " + responseMessage);
-                throw new RuntimeException(responseMessage);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOG.error("handleGetAdminName failed: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }

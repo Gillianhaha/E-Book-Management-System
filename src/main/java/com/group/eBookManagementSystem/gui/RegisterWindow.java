@@ -19,8 +19,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RegisterWindow {
+
     private static final Logger LOG = LoggerFactory.getLogger(RegisterWindow.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
     private final SingletonWindow singletonWindow;
     private final JTextField usernameField;
     private final JTextField firstnameField;
@@ -73,8 +75,7 @@ public class RegisterWindow {
         singletonWindow.setVisible(true);
     }
 
-
-    public void handleRegisterRequest() {
+    private void handleRegisterRequest() {
         try {
             Customer customer = new Customer();
             customer.setUserName(usernameField.getText());

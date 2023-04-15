@@ -34,7 +34,7 @@ public class ControllerExceptionHandler {
     private MultiValueMap<String, String> generateResponseHeaders(Object e) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         String json = objectMapper.writeValueAsString(e);
-        LOG.info(String.format("the json for headers is: %s", json));
+        LOG.info(String.format("json for headers is: %s", json));
 
         MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
         headers.add("Content-Length", String.valueOf(json.length()));

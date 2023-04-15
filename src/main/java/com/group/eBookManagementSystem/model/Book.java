@@ -11,16 +11,23 @@ import lombok.Setter;
 @Setter
 @Getter
 public class Book {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     private String bookName;
+
     private String subject;
+
     private String author;
+
     private String content;
+
     private Integer sum = 0;
+
     private Integer count = 0;
+
     private Integer rate = 0;
 
     public void addRate(Integer number) {

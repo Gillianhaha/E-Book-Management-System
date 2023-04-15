@@ -18,7 +18,9 @@ import org.slf4j.LoggerFactory;
 
 @Getter
 public class LoginWindow {
+
     private static final Logger LOG = LoggerFactory.getLogger(LoginWindow.class);
+
     private final SingletonWindow singletonWindow;
     private final JTextField usernameField;
     private final JPasswordField passwordField;
@@ -61,8 +63,7 @@ public class LoginWindow {
         singletonWindow.setVisible(true);
     }
 
-
-    public void handleLoginRequest() {
+    private void handleLoginRequest() {
         try {
             String userName = usernameField.getText();
             String password = passwordField.getText();
@@ -87,4 +88,5 @@ public class LoginWindow {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(LoginWindow::new);
     }
+
 }

@@ -25,6 +25,7 @@ public class ManageBooksWindow {
 
     private static final Logger LOG = LoggerFactory.getLogger(ManageBooksWindow.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
     private final SingletonWindow singletonWindow;
     private final JTable userTable;
     private final JTextField bookIDField;
@@ -70,7 +71,7 @@ public class ManageBooksWindow {
         JButton goBackButton = new JButton("Go Back");
         goBackButton.addActionListener(event -> {
             SwingUtilities.invokeLater(() -> {
-                AccountWindow accountWindow = new AccountWindow(handleGetAdminName());
+                AccountWindow accountWindow = new AccountWindow(HttpRequestUtils.handleGetAdminName());
             });
         });
 
@@ -89,7 +90,7 @@ public class ManageBooksWindow {
         singletonWindow.setVisible(true);
     }
 
-    public void handleDeleteBookRequest() {
+    private void handleDeleteBookRequest() {
         try {
             URL url = new URL("http://localhost:8080/deleteBook?id=" + Integer.parseInt(bookIDField.getText()));
             String[] response = HttpRequestUtils.sendPostRequest(url);
@@ -129,23 +130,4 @@ public class ManageBooksWindow {
         }
     }
 
-    private String handleGetAdminName() {
-        try {
-            URL url = new URL("http://localhost:8080/getAdminName");
-            String[] response = HttpRequestUtils.sendGetRequest(url);
-            int responseStatusCode = Integer.parseInt(response[0]);
-            String responseMessage = response[1];
-            LOG.info(String.format("Response of handleGetAdminName: %s", responseMessage));
-            if (responseStatusCode == HttpURLConnection.HTTP_OK) {
-                return responseMessage;
-            } else {
-                LOG.error("handleGetAdminName failed: " + responseMessage);
-                throw new RuntimeException(responseMessage);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOG.error("handleGetAdminName failed: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
 }

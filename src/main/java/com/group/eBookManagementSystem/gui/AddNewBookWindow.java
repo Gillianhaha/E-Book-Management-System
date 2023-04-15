@@ -18,8 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AddNewBookWindow {
+
     private static final Logger LOG = LoggerFactory.getLogger(AddNewBookWindow.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
     private final SingletonWindow singletonWindow;
     private final JTextField bookNameField;
     private final JTextField authorField;
@@ -70,7 +72,7 @@ public class AddNewBookWindow {
         singletonWindow.setVisible(true);
     }
 
-    public void handleAddBookRequest() {
+    private void handleAddBookRequest() {
         try{
             Book book = new Book();
             book.setBookName(bookNameField.getText());

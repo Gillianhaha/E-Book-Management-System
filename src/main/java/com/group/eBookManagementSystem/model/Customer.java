@@ -17,12 +17,18 @@ public class Customer {
 
     @Id
     private String userName;
+
     private String firstName;
+
     private String lastName;
+
     private String password;
+
     private String email;
+
     @ElementCollection
     private List<Integer> myLibrary = new ArrayList<Integer>();
+
     @Enumerated(EnumType.STRING)
     private Role role;
 

@@ -24,8 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AccountWindow {
+
     private static final Logger LOG = LoggerFactory.getLogger(AccountWindow.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
     private final SingletonWindow singletonWindow;
     private final JTable userTable;
     private final JTextField bookNameField;
@@ -36,8 +38,9 @@ public class AccountWindow {
     private final JButton booksButton;
     private final JButton usersButton;
     private final String userName;
-    private final Customer customer;
     private final JTextField alarmField;
+
+    private final Customer customer;
 
     public AccountWindow(String userName) {
         this.userName = userName;
@@ -168,7 +171,7 @@ public class AccountWindow {
         }
     }
 
-    public void handleUpdateCustomerRequest(Customer customer) {
+    private void handleUpdateCustomerRequest(Customer customer) {
         try {
             URL url = new URL("http://localhost:8080/updateCustomer");
             String[] response = HttpRequestUtils.sendPostRequest(url, customer);
@@ -188,7 +191,7 @@ public class AccountWindow {
         }
     }
 
-    public void deleteBookFromCustomer(Integer bookId) {
+    private void deleteBookFromCustomer(Integer bookId) {
         List<Integer> bookList = customer.getMyLibrary();
         if (bookList.contains(bookId)) {
             bookList.removeAll(Collections.singletonList(bookId));
@@ -203,7 +206,7 @@ public class AccountWindow {
         }
     }
 
-    public void addBookToCustomer(Integer bookId) {
+    private void addBookToCustomer(Integer bookId) {
         List<Integer> bookList = customer.getMyLibrary();
         LOG.info(String.format("addBookToCustomer started: adding book %s to user %s", bookId, userName));
         LOG.info(String.format("addBookToCustomer started: user current book list %s", bookList));
@@ -218,7 +221,7 @@ public class AccountWindow {
         }
     }
 
-    public void handleRateBookRequest(Integer bookId, Integer rate) {
+    private void handleRateBookRequest(Integer bookId, Integer rate) {
         try {
             List<Integer> bookIdList = handleFindByUserNameRequest(userName).getMyLibrary();
             if (!bookIdList.contains(bookId)) {

@@ -9,6 +9,7 @@ import lombok.Setter;
 public class SingletonWindow extends JFrame {
 
     private static SingletonWindow singletonWindow = null;
+
     private SingletonWindow() {
 
     }
