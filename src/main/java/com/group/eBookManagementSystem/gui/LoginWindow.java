@@ -13,13 +13,13 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Getter
 public class LoginWindow {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LoginWindow.class);
+    private static final Logger LOG = LogManager.getLogger(LoginWindow.class);
 
     private final SingletonWindow singletonWindow;
     private final JTextField usernameField;

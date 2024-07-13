@@ -8,12 +8,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class HttpRequestUtils {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HttpRequestUtils.class);
+    private static final Logger LOG = LogManager.getLogger(HttpRequestUtils.class);
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 

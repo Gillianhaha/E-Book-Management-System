@@ -14,12 +14,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AddNewBookWindow {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AddNewBookWindow.class);
+    private static final Logger LOG = LogManager.getLogger(AddNewBookWindow.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final SingletonWindow singletonWindow;

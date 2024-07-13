@@ -20,12 +20,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AccountWindow {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AccountWindow.class);
+    private static final Logger LOG = LogManager.getLogger(AccountWindow.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final SingletonWindow singletonWindow;
